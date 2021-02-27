@@ -37,17 +37,23 @@ wss.on('connection', (ws, req) => {
 
     ws.on('message', (data) => {
         data = JSON.parse(data);
-
+        console.log(data);
+        if (data.type == "joinParty") {
+            let foundParty = getPartyByJoinCode(data.partyId.toString().trim());
+            if (!foundParty) return;
+            removeFromParty(ws);
+            addToParty(ws, foundParty)
+        }
     });
 
-    ws.on('close', (data) => { 
+    ws.on('close', (data) => {
         console.log(`User left: ${ws.clientId}, party: ${ws.party.partyId}`)
-        removeFromLobby(ws);
+        removeFromParty(ws);
     });
 
 });
 
-function getJsonReadyParty(party){
+function getJsonReadyParty(party) {
     const returnParty = {
         partyId: party.partyId,
         joinCode: party.joinCode,
@@ -58,11 +64,19 @@ function getJsonReadyParty(party){
     return returnParty;
 }
 
-function getPartyById(partyId) {
-    const lobby = parties.filter(function (party) {
-        return party.partyId === partyId;
+function getPartyByJoinCode(partyCode) {
+    console.log(partyCode)
+    const foundParty = parties.filter(function (party) {
+        return party.joinCode.localeCompare(partyCode) == 0;
     });
-    return lobby[0];
+    return foundParty[0];
+}
+
+function getPartyById(partyId) {
+    const foundParty = parties.filter(function (party) {
+        return party.partyId.localeCompare(partyId) == 0;
+    });
+    return foundParty[0];
 }
 
 function createNewParty(client) {
@@ -78,17 +92,28 @@ function createNewParty(client) {
     return newParty;
 }
 
-function removeFromLobby(user) {
+function removeFromParty(user) {
     const party = parties.filter(function (party) {
-        return party.partyId === user.partyId;
+        return party.partyId.localeCompare(user.partyId) == 0;
     })[0];
 
-    if(!party) return;
+    if (!party) return;
 
     party.users = party.users.filter(function (el) {
-        return el.clientId != user.clientId;
+        return el.clientId != user.clientId && el.party.partyId.localeCompare(party.partyId) == 0
     });
     return;
+}
+
+function addToParty(user, party) {
+    party.users.push(user);
+    const jsonReadyParty = getJsonReadyParty(party);
+    party.users.forEach(partyUser => {
+        partyUser.send(JSON.stringify({
+            type: "partyUpdate",
+            party: jsonReadyParty
+        }));
+    })
 }
 
 function AutomaticClean() {
@@ -100,7 +125,7 @@ function AutomaticClean() {
             return AutomaticClean();
         } else {
             parties[i].users = parties[i].users.filter(function (client) {
-                return client.readyState === WebSocket.OPEN;
+                return client.readyState === WebSocket.OPEN && client.party.partyId.localeCompare(parties[i].partyId) == 0;
             });
         }
     }
