@@ -53,7 +53,7 @@ wss.on('connection', (ws, req) => {
             ws.party.mapName = data.map;
             sendCurrentPartyState(party);
         } else if (data.type == "travelToMap") {
-            ws.party.clients.forEach(client => {
+            ws.party.users.forEach(client => {
                 if (client != ws) {
                     client.send(JSON.stringify({
                         type: "travelMap"
