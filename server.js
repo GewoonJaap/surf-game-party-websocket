@@ -52,7 +52,15 @@ wss.on('connection', (ws, req) => {
         } else if (data.type == "updateMap") {
             ws.party.mapName = data.map;
             sendCurrentPartyState(party);
-        }
+        } else if (data.type == "travelToMap") {
+            ws.party.clients.forEach(client => {
+                if (client != ws) {
+                    client.send(JSON.stringify({
+                        type: "travelMap"
+                    }));
+                }
+            });
+        };
     });
 
     ws.on('close', (data) => {
