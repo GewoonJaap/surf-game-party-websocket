@@ -44,6 +44,14 @@ wss.on('connection', (ws, req) => {
             if (!foundParty) return;
             removeFromParty(ws);
             addToParty(ws, foundParty)
+        } else if (data.type == "createParty") {
+            removeFromParty(ws);
+            let party = createNewParty(ws);
+            ws.party = party;
+            sendCurrentPartyState(party);
+        } else if (data.type == "updateMap") {
+            ws.party.mapName = data.map;
+            sendCurrentPartyState(party);
         }
     });
 
@@ -60,7 +68,8 @@ function getJsonReadyParty(party) {
         joinCode: party.joinCode,
         startTime: party.startTime,
         creator: party.creator,
-        users: party.users.map(u => u.clientId)
+        users: party.users.map(u => u.clientId),
+        mapName: party.mapName
     };
     return returnParty;
 }
@@ -81,12 +90,15 @@ function getPartyById(partyId) {
 }
 
 function createNewParty(client) {
+    let joinCode = nanoid(6);
+
     const newParty = {
         partyId: uuid.v4(),
-        joinCode: nanoid(6),
+        joinCode: joinCode,
         startTime: Date.now(),
         creator: client.clientId,
-        users: [client]
+        users: [client],
+        mapName: "MainMenu"
     }
     parties.push(newParty);
     console.log(`Created a new party`, newParty)
@@ -104,7 +116,10 @@ function removeFromParty(user) {
     });
     console.log(`Removed: ${user.clientId} from party`, party)
     sendCurrentPartyState(party);
-    party.users.forEach(user => user.send(JSON.stringify({type: "userLeft", id: user.clientId})))
+    party.users.forEach(user => user.send(JSON.stringify({
+        type: "userLeft",
+        id: user.clientId
+    })))
     return;
 }
 
