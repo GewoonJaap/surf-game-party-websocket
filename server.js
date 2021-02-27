@@ -28,9 +28,10 @@ wss.on('connection', (ws, req) => {
 
     console.log(`New connection: ${ws.clientId}, ${wss.clients.size}`);
 
+    sendCurrentPartyState(party);
     ws.send(JSON.stringify({
-        type: "partyUpdate",
-        party: getJsonReadyParty(party)
+        type: "updateUserId",
+        id: ws.clientId
     }));
 
 
@@ -94,19 +95,25 @@ function createNewParty(client) {
 
 function removeFromParty(user) {
     const party = parties.filter(function (party) {
-        return party.partyId.localeCompare(user.partyId) == 0;
+        return party.partyId.localeCompare(user.party.partyId) == 0;
     })[0];
-
     if (!party) return;
 
     party.users = party.users.filter(function (el) {
-        return el.clientId != user.clientId && el.party.partyId.localeCompare(party.partyId) == 0
+        return el.clientId.localeCompare(user.clientId) != 0
     });
+    console.log(`Removed: ${user.clientId} from party`, party)
+    sendCurrentPartyState(party);
+    party.users.forEach(user => user.send(JSON.stringify({type: "userLeft", id: user.clientId})))
     return;
 }
 
 function addToParty(user, party) {
     party.users.push(user);
+    sendCurrentPartyState(party);
+}
+
+function sendCurrentPartyState(party) {
     const jsonReadyParty = getJsonReadyParty(party);
     party.users.forEach(partyUser => {
         partyUser.send(JSON.stringify({
@@ -127,6 +134,7 @@ function AutomaticClean() {
             parties[i].users = parties[i].users.filter(function (client) {
                 return client.readyState === WebSocket.OPEN && client.party.partyId.localeCompare(parties[i].partyId) == 0;
             });
+            sendCurrentPartyState(parties[i]);
         }
     }
 }
