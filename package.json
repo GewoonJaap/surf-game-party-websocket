@@ -1,0 +1,27 @@
+{
+  "name": "surf-game-party-websocket",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GewoonJaap/surf-game-party-websocket.git"
+  },
+  "keywords": [
+    "surf"
+  ],
+  "author": "Mr. Proper",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GewoonJaap/surf-game-party-websocket/issues"
+  },
+  "homepage": "https://github.com/GewoonJaap/surf-game-party-websocket#readme",
+  "dependencies": {
+    "nanoid": "^3.1.20",
+    "uuid": "^8.3.2",
+    "ws": "^7.4.3"
+  }
+}
