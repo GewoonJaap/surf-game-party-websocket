@@ -133,6 +133,7 @@ function removeFromParty(user) {
 
 function addToParty(user, party) {
     party.users.push(user);
+    user.party = party;
     sendCurrentPartyState(party);
 }
 
