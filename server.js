@@ -164,9 +164,12 @@ function sendCurrentPartyState(party) {
             type: "partyUpdate",
             party: jsonReadyParty
         });
-        if (partyUser.useBuffer) {
-            message = Buffer.from(message);
-        }
+            
+   
+        partyUser.send(message);
+
+        message = Buffer.from(message);
+
         partyUser.send(message);
     })
 }
