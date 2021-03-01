@@ -25,6 +25,7 @@ wss.on('connection', (ws, req) => {
     ws.clientId = uuid.v4();
     let party = createNewParty(ws);
     ws.party = party;
+    ws.useBuffer = false;
 
     console.log(`New connection: ${ws.clientId}, ${wss.clients.size}`);
 
@@ -34,9 +35,17 @@ wss.on('connection', (ws, req) => {
         id: ws.clientId
     }));
 
+    ws.send(Buffer.from(JSON.stringify({
+        type: "updateUserId",
+        id: ws.clientId
+    })));
+
 
 
     ws.on('message', (data) => {
+        ws.useBuffer = Buffer.isBuffer(data);
+        data = data.toString('utf8');
+
         data = JSON.parse(data);
         console.log(data);
         if (data.type == "joinParty") {
@@ -55,9 +64,14 @@ wss.on('connection', (ws, req) => {
         } else if (data.type == "travelToMap") {
             ws.party.users.forEach(client => {
                 if (client != ws) {
-                    client.send(JSON.stringify({
+
+                    let message = JSON.stringify({
                         type: "travelMap"
-                    }));
+                    });
+                    if (client.useBuffer) {
+                        message = Buffer.from(message);
+                    }
+                    client.send(message);
                 }
             });
         };
@@ -124,10 +138,16 @@ function removeFromParty(user) {
     });
     console.log(`Removed: ${user.clientId} from party`, party)
     sendCurrentPartyState(party);
-    party.users.forEach(user => user.send(JSON.stringify({
-        type: "userLeft",
-        id: user.clientId
-    })))
+    party.users.forEach(user => {
+        let message = JSON.stringify({
+            type: "userLeft",
+            id: user.clientId
+        });
+        if (user.useBuffer) {
+            message = Buffer.from(message);
+        }
+        user.send(message);
+    });
     return;
 }
 
@@ -140,10 +160,14 @@ function addToParty(user, party) {
 function sendCurrentPartyState(party) {
     const jsonReadyParty = getJsonReadyParty(party);
     party.users.forEach(partyUser => {
-        partyUser.send(JSON.stringify({
+        let message = JSON.stringify({
             type: "partyUpdate",
             party: jsonReadyParty
-        }));
+        });
+        if (partyUser.useBuffer) {
+            message = Buffer.from(message);
+        }
+        partyUser.send(message);
     })
 }
 
