@@ -1,2 +1,3 @@
 # surf-game-party-websocket
  
+Very simple party implementation for my game Surf, code might be messy...
